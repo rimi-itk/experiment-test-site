@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  SETTINGS_LOCAL: |
+    <?php
+
+    $settings['hash_salt'] = 'Salt-N-Pepa';
+
+    $databases['default']['default'] = [
+      'database' => 'db',
+      'username' => 'db',
+      'password' => 'db',
+      'prefix' => '',
+      'host' => 'mariadb',
+      'port' => '',
+      'isolation_level' => 'READ COMMITTED',
+      'driver' => 'mysql',
+      'namespace' => 'Drupal\\mysql\\Driver\\Database\\mysql',
+      'autoload' => 'core/modules/mysql/src/Driver/Database/mysql/',
+    ];
+
+    $config['system.logging']['error_level'] = ERROR_REPORTING_DISPLAY_VERBOSE;
+
+    // https://www.drupal.org/docs/getting-started/installing-drupal/using-a-load-balancer-or-reverse-proxy
+    $settings['reverse_proxy'] = TRUE;
+    $settings['reverse_proxy_addresses'] = [$_SERVER['REMOTE_ADDR']];
+
+tasks:
+  install:
+    desc: Install the test site
+    cmds:
+      - task: init
+      - itkdev-docker-compose-server exec phpfpm vendor/bin/drush site:install --existing-config --yes
+      - task: update
+
+  update:
+    desc: Update the test site
+    cmds:
+      - task: init
+      - itkdev-docker-compose-server exec phpfpm vendor/bin/drush deploy
+      # @todo Load fixtures
+
+  init:
+    desc:
+    cmds:
+      - itkdev-docker-compose-server pull
+      - itkdev-docker-compose-server up --detach --wait --remove-orphans
+      - itkdev-docker-compose-server exec phpfpm composer install
+      - |
+        cat > web/sites/default/settings.local.php <<'EOF'
+        {{.SETTINGS_LOCAL}}
+        EOF
+    internal: true
