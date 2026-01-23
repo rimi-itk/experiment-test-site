@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+tasks:
+  coding-standards:apply:
+    desc: "Apply coding standards"
+    cmds:
+      - task: coding-standards:markdown:apply
+      - task: coding-standards:yaml:apply
+
+  coding-standards:check:
+    desc: "Apply and check coding standards"
+    cmds:
+      - task: coding-standards:markdown:check
+      - task: coding-standards:yaml:check
+
+  coding-standards:markdown:apply:
+    desc: "Apply coding standards for Markdown"
+    cmds:
+      # Cf. .github/workflows/markdown.yaml
+      - docker compose run --rm markdownlint markdownlint '**/*.md' --fix
+
+  coding-standards:markdown:check:
+    desc: "Apply and check coding standards for Markdown"
+    cmds:
+      - task: coding-standards:markdown:apply
+      # Cf. .github/workflows/markdown.yaml
+      - docker compose run --rm markdownlint markdownlint '**/*.md'
+
+  coding-standards:shell-script:check:
+    desc: "Check coding standards for shell scripts"
+    cmds:
+      # https://github.com/koalaman/shellcheck?tab=readme-ov-file#installing
+      - docker run --rm --volume "$PWD:"/mnt koalaman/shellcheck:stable --external-sources {{.GLOB}}
+    vars:
+      # We use a block scalar (https://yaml-multiline.info/#block-scalars) here to make escaping (a little) easier.
+      GLOB: >-
+        {{.CLI_ARGS | default "bin/*"}}
+
+  coding-standards:yaml:apply:
+    desc: "Apply coding standards for YAML"
+    cmds:
+      # Cf. .github/workflows/yaml.yaml
+      - docker compose run --rm prettier '**/*.{yml,yaml}' --write
+
+  coding-standards:yaml:check:
+    desc: "Apply and check coding standards for YAML"
+    cmds:
+      - task: coding-standards:yaml:apply
+      # Cf. .github/workflows/yaml.yaml
+      - docker compose run --rm prettier '**/*.{yml,yaml}' --check
+
+  default:
+    cmd: task --list
+    silent: true
