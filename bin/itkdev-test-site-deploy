@@ -70,7 +70,7 @@ info() {
 }
 
 warning() {
-    echo "$@"
+    echo "Warning:" "$@"
 }
 
 config() {
@@ -125,9 +125,29 @@ EOF
                 site_command_config_path="${site_dir}/${compose_command_config_filename}"
                 echo "========================================================================================================================"
                 echo "Directory:  ${site_dir}"
+
+                created_at=""
+                domain=""
+                if [ ! -e "${site_command_config_path}" ]; then
+                    warning "Compose command config file ${site_command_config_path} is missing"
+                else
+                    domain=$(grep COMPOSE_SERVER_DOMAIN "${site_command_config_path}")
+
+                    # Note: `stat` in macOS (i.e. `/usr/bin/stat`) does not support `--format`
+                    if stat --format '%w' "${site_command_config_path}" > /dev/null 2>&1; then
+                        created_at=$(stat --format '%w' "${site_command_config_path}")
+                    fi
+                fi
+
                 echo "Repository: $(git -C "${site_dir}" remote get-url origin)"
                 echo "Branch:     $(git -C "${site_dir}" rev-parse --abbrev-ref HEAD)"
-                echo
+                if [ -n "${created_at}" ]; then
+                    echo "Created at: ${created_at}"
+                fi
+                if [ -n "${domain}" ]; then
+                    # https://tldp.org/LDP/abs/html/string-manipulation.html
+                    echo "URL:        https://${domain##*=}"
+                fi
                 if [ ! -e "${site_command_config_path}" ]; then
                     warning "Compose command config file ${site_command_config_path} is missing"
                 else

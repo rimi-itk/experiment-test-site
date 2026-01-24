@@ -15,4 +15,4 @@ jobs:
       - uses: go-task/setup-task@v1
 
       - run: |
-          task coding-standards:check:shell-script
+          task coding-standards:shell-script:check
