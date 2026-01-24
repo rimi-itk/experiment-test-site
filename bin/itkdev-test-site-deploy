@@ -2,26 +2,87 @@
 set -o errexit -o errtrace -o noclobber -o nounset -o pipefail
 IFS=$'\n\t'
 
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 script_name=$(basename "${BASH_SOURCE[0]}")
-
-# Read config
-config_path="${script_dir}/.env.local"
-if [ -e "${config_path}" ]; then
-  # shellcheck disable=SC1090
-  . "${config_path}"
-fi
-# Apply default values (cf. https://stackoverflow.com/a/28085062)
-: "${site_base_dir:="${HOME}/itkdev/test-sites"}"
-: "${site_base_domain="example.com"}"
-: "${compose_command="itkdev-docker-compose-server"}"
-: "${compose_command_config_filename=".env.docker.local"}"
-: "${compose_files:="docker-compose.server.test.yml"}"
 
 abort() {
     echo "$@" >&2
     exit 1
 }
+
+verbose=false
+
+# Global config using `git config` as storage.
+config_path="${HOME}/.itkdev-test-site-deploy.config"
+[ -e "${config_path}" ] || touch "${config_path}"
+
+_git_config() {
+    command="${1:-}"
+    shift
+    if [[ -z "${command}" ]]; then
+        abort "Missing or empty config command"
+    fi
+
+    git config "${command}" --file "${config_path}" "$@"
+}
+
+_config_get() {
+    if [[ $# -ne 1 ]]; then
+        abort "Missing config name"
+    fi
+
+    name="${1}"
+    if [[ -z "${name}" ]]; then
+        abort "Empty config name"
+    fi
+
+    _git_config get "${name}" || true
+}
+
+_config_set() {
+    if [[ $# -ne 2 ]]; then
+        abort "Missing config name and value"
+    fi
+
+    name="${1}"
+    if [[ -z "${name}" ]]; then
+        abort "Empty config name"
+    fi
+
+    value="${2}"
+    if [[ -z "${value}" ]]; then
+        abort "Empty config value"
+    fi
+
+    _git_config set "${name}" "${value}"
+}
+
+# Read global config
+site_baseDir=$(_config_get "site.baseDir")
+site_baseDomain=$(_config_get "site.baseDomain")
+compose_command=$(_config_get "compose.command")
+compose_commandConfigFilename=$(_config_get "compose.commandConfigFilename")
+compose_files=$(_config_get "compose.files")
+
+# Apply default values (cf. https://stackoverflow.com/a/28085062)
+: "${site_baseDir:="${HOME}/itkdev/test-sites"}"
+: "${compose_command:="itkdev-docker-compose-server"}"
+: "${compose_commandConfigFilename:=".env.docker.local"}"
+: "${compose_files:="docker-compose.server.test.yml"}"
+
+# Validate config
+# Require site.baseDomain to be set unless we're currently setting it.
+if [[ "${1:-}" != "config" ]] || \
+    [[ "${2:-}" != "set" ]] || \
+    [[ "${3:-}" != "site.baseDomain" ]]; then
+    if [[ -z "${site_baseDomain}" ]]; then
+        abort "Missing or empty config value for site.baseDomain
+
+Set it with
+
+  ${script_name} config set site.baseDomain
+"
+    fi
+fi
 
 usage() {
     if [[ $# -gt 0 ]]; then
@@ -29,11 +90,11 @@ usage() {
         echo >&2
     fi
     cat >&2 <<EOF
-Usage: ${script_name} <action> [action arguments and flags]
+Usage: ${script_name} [--verbose] <action> [action arguments and flags]
 
 Actions:
   config: ${script_name} config
-  list:   ${script_name} list [--verbose]
+  list:   ${script_name} list
   deploy: ${script_name} deploy <repo> <branch> [--install]
   remove: ${script_name} remove <directory>
 
@@ -42,7 +103,7 @@ EOF
 }
 
 action_usage() {
-    echo "$@" >&2
+    echo "Usage: ${script_name}" "$@" >&2
     echo >&2
     exit 1
 }
@@ -51,32 +112,76 @@ info() {
     echo "$@"
 }
 
+warning() {
+    echo "$@"
+}
+
+# Get config value from storage or a default value.
+config_get_value() {
+    if [[ $# -ne 1 ]]; then
+        abort "Missing config name"
+    fi
+
+    name="${1}"
+    if [[ -z "${name}" ]]; then
+        abort "Empty config name"
+    fi
+
+    value=$(_git_config get "${name}" || true)
+    if [[ -z "${value}" ]]; then
+        # Try to get value from named varable
+        name="${1/./_}"
+        value="${!name}"
+    fi
+
+    echo "${value}"
+}
+
 config() {
-  echo "Current configuration:"
-  echo
-  echo "  site_base_dir:                   ${site_base_dir}"
-  echo "  site_base_domain:                ${site_base_domain}"
-  echo "  compose_command:                 ${compose_command}"
-  echo "  compose_command_config_filename: ${compose_command_config_filename}"
-  echo "  compose_files:                   ${compose_files}"
-  echo
-  echo "Edit ${config_path} to change the configuration values."
+    action="list"
+    if [[ $# -gt 0 ]]; then
+        action="$1"
+        shift
+    fi
+
+    case "${action}" in
+        list)
+            names=(
+             "site.baseDir"
+             "site.baseDomain"
+             "compose.command"
+             "compose.commandConfigFilename"
+             "compose.files"
+            )
+            for name in "${names[@]}"; do
+                echo "${name}: $(config_get_value "${name}")"
+            done
+            echo
+            echo "Use "'`'"${script_name} config set <name>"'`'" to set a configuration value."
+            ;;
+        set)
+            _config_set "$@"
+            ;;
+        get)
+            config_get_value "$@"
+            # @todo Make `config get` return default values if not set in Git config storage.
+            config_value=$(_config_get "$@")
+            config_name="${1/./_}"
+            echo "config_name: ${config_name}"
+            actual_value="${!config_name}"
+            echo "${config_value}" "${actual_value}"
+            ;;
+        *)
+            action_usage "config list|set"
+            ;;
+    esac
 }
 
 list() {
-    verbose=false
-    for var in "$@"; do
-        case "${var}" in
-            --verbose)
-                verbose=true
-                ;;
-        esac
-    done
-
-    echo "Projects in ${site_base_dir}"
+    echo "Projects in ${site_baseDir}"
     echo
-    if [ -e "${site_base_dir}" ]; then
-        for d in "${site_base_dir}"/*; do
+    if [ -e "${site_baseDir}" ]; then
+        for d in "${site_baseDir}"/*; do
             if [ -d "${d}" ]; then
                 echo "------------------------------------------------------------------------------------------------------------------------"
                 echo "Directory:  ${d}"
@@ -85,10 +190,14 @@ list() {
                 echo
                 echo "itkdev-docker-compose-server config:"
                 echo
-                cat "${d}/${compose_command_config_filename}"
-                echo
-                if [ "${verbose}" = true ]; then
-                    (cd "${d}" && "${compose_command}" ps --all)
+                if [ ! -e "${d}/${compose_commandConfigFilename}" ]; then
+                    warning "Compose command config file ${d}/${compose_commandConfigFilename} is missing"
+                else
+                    cat "${d}/${compose_commandConfigFilename}"
+                    echo
+                    if [ "${verbose}" = true ]; then
+                        (cd "${d}" && "${compose_command}" ps --all)
+                    fi
                 fi
                 echo "------------------------------------------------------------------------------------------------------------------------"
                 echo
@@ -99,7 +208,7 @@ list() {
 
 deploy() {
     if [[ $# -lt 2 ]]; then
-        action_usage "Usage: ${script_name} deploy <repo> <branch> [--install]"
+        action_usage "deploy <repo> <branch> [--install]"
     fi
 
     repo_url="$1"
@@ -125,9 +234,9 @@ deploy() {
     # number.
     compose_project_name=$(echo "${compose_project_name}" | tr "[:upper:]" "[:lower:]")
 
-    project_domain="${project_id}.${site_base_domain}"
+    project_domain="${project_id}.${site_baseDomain}"
     project_url="https://${project_domain}"
-    project_dir=$(echo "${site_base_dir}/${project_id}" | sed "s@[^a-z0-9/-]@@gi")
+    project_dir=$(echo "${site_baseDir}/${project_id}" | sed "s@[^a-z0-9/-]@@gi")
 
     # https://stackoverflow.com/questions/2953646/how-can-i-declare-and-use-boolean-variables-in-a-shell-script/21210966
     install_site=false
@@ -159,14 +268,15 @@ deploy() {
     git reset --hard "origin/${branch}"
     git log -3
 
-    cat >| "${compose_command_config_filename}" <<EOF
+    cat >| "${compose_commandConfigFilename}" <<EOF
+# Generated by ${script_name} on $(date)
 COMPOSE_PROJECT_NAME=${compose_project_name}
 COMPOSE_SERVER_DOMAIN=${project_domain}
 
 COMPOSE_FILES=${compose_files}
 EOF
 
-    cat "${compose_command_config_filename}"
+    cat "${compose_commandConfigFilename}"
 
     if [ "${install_site}" = true ]; then
         info "Installing site"
@@ -182,13 +292,13 @@ EOF
 
 remove() {
     if [[ $# -lt 1 ]]; then
-        action_usage "Usage: ${script_name} remove <directory>"
+        action_usage "remove <directory>"
     fi
 
     directory="$1"
     shift
 
-    if [ ! -e "${directory}/${compose_command_config_filename}" ]; then
+    if [ ! -e "${directory}/${compose_commandConfigFilename}" ]; then
         abort "Directory ${directory} does not look like a test site directory."
     fi
 
@@ -199,6 +309,19 @@ remove() {
 }
 
 # -----------------------------------------------------------------------------------------------------------------------
+
+if [[ $# -lt 1 ]]; then
+    usage
+fi
+
+while [[ "${1:-}" == --* ]]; do
+    case "${1}" in
+        --verbose)
+            verbose=true
+            ;;
+    esac
+    shift
+done
 
 if [[ $# -lt 1 ]]; then
     usage
