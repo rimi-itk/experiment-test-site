@@ -17,6 +17,7 @@ on the `itkdev-test-site-deploy` command.
 
 ## Installation
 
+0. [Install Task](https://taskfile.dev/docs/installation) is not already installed
 1. Get the code:
 
    ``` shell
