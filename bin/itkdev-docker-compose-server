@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -o errexit -o errtrace -o noclobber -o nounset -o pipefail
+IFS=$'\n\t'
+
+abort() {
+    echo "$@" >&2
+    exit 1
+}
+
+config_file=".env.docker.local"
+if [ ! -e "${config_file}" ]; then
+    abort "file ${config_file} not found."
+fi
+
+# shellcheck disable=SC1090
+. "${config_file}"
+
+if [[ -z "${COMPOSE_FILES:-}" ]]; then
+    abort "COMPOSE_FILES not set in config"
+fi
+
+compose_arguments=(
+    --env-file
+    "${config_file}"
+)
+
+# https://stackoverflow.com/a/918931
+IFS=',' read -ra files <<< "$COMPOSE_FILES"
+for file in "${files[@]}"; do
+    compose_arguments+=(--file)
+    compose_arguments+=("${file}")
+done
+
+docker compose "${compose_arguments[@]}" "$@"

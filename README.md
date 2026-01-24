@@ -1,6 +1,10 @@
 # itkdev-test-site-deploy
 
-A pragmatic solution to easily deploy test sites utilizing `itkdev-docker-compose-server`.
+A pragmatic solution to easily deploy test sites utilizing `itkdev-docker-compose-server`[^1].
+
+[^1]: If you don't have a real `itkdev-docker-compose-server` setup on your server, you can use
+      [bin/itkdev-docker-compose-server](bin/itkdev-docker-compose-server) as a drop-in replacement (with only the basis
+      functionality need for test site deployment).
 
 A test site is deployed by specifying a Git repository URL and a branch name, e.g.
 
