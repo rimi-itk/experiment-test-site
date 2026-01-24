@@ -12,6 +12,7 @@ abort() {
 is_verbose=false
 is_debugging=false
 is_affirmative=false
+show_help=false
 
 # Global config
 config_path="${HOME}/.itkdev-test-site-deploy.config"
@@ -38,19 +39,27 @@ usage() {
         echo >&2
     fi
     cat >&2 <<EOF
-Usage: ${script_name} [--verbose] [--debug] [--yes] <action> [action arguments and flags]
+Usage: ${script_name} [--verbose] [--debug] [--yes] [--help] <command> [command arguments and options]
 
-Actions:
-  config: ${script_name} config
-  list:   ${script_name} list
-  deploy: ${script_name} deploy <repo> <branch> [--install]
-  remove: ${script_name} remove <directory>
+Commands:
+  deploy: Deploy a test site
+  list:   List current test sites
+  remove: Remove a test site
+  config: Show configuration
+
+Options:
+  --verbose:    Show more information
+  --debug:      Show all commands run
+  --yes:        Don't ask for confirmation
+  --help:       Show help for a command
+
+Use \`--help\` to get detailed help on a command, e.g. \`${script_name} deploy --help\`.
 
 EOF
     exit 1
 }
 
-action_usage() {
+command_usage() {
     echo "Usage: ${script_name}" "$@" >&2
     echo >&2
     exit 1
@@ -76,13 +85,45 @@ config() {
 }
 
 list() {
+    if [ "${show_help}" = true ]; then
+        cat <<EOF
+List installed test sites.
+
+Usage: ${script_name} list [--verbose] [--show-compose-config] [--show-compose-containers]
+
+Options:
+  --verbose:                    Show additional info on each test site, e.g. the command needed to remove it
+  --show-compose-config:        Show compose config
+  --show-compose-containers:    Show all containers in the test site
+
+Example:
+
+  ${script_name} list --verbose
+
+EOF
+        return
+    fi
+
+    show_compose_config=false
+    show_compose_containers=false
+    for arg in "$@"; do
+        case "${arg}" in
+            --show-compose-config)
+                show_compose_config=true
+                ;;
+            --show-compose-containers)
+                show_compose_containers=true
+                ;;
+        esac
+    done
+
     echo "Projects in ${site_base_dir}"
     echo
     if [ -e "${site_base_dir}" ]; then
         for site_dir in "${site_base_dir}"/*; do
             if [ -d "${site_dir}" ]; then
                 site_command_config_path="${site_dir}/${compose_command_config_filename}"
-                echo "------------------------------------------------------------------------------------------------------------------------"
+                echo "========================================================================================================================"
                 echo "Directory:  ${site_dir}"
                 echo "Repository: $(git -C "${site_dir}" remote get-url origin)"
                 echo "Branch:     $(git -C "${site_dir}" rev-parse --abbrev-ref HEAD)"
@@ -91,23 +132,28 @@ list() {
                     warning "Compose command config file ${site_command_config_path} is missing"
                 else
                     if [ "${is_verbose}" = true ]; then
-                        echo "Run
+                        echo "------------------------------------------------------------------------------------------------------------------------"
+                        cat <<EOF
+Run
 
   ${script_name} remove ${site_dir}
 
 to remove this test site.
-"
+EOF
                     fi
-                    if [ "${is_debugging}" = true ]; then
+                    if [ "${show_compose_config}" = true ]; then
+                        echo "------------------------------------------------------------------------------------------------------------------------"
                         echo "${site_command_config_path}:"
                         echo
                         cat "${site_command_config_path}"
                         echo
-
+                    fi
+                    if [ "${show_compose_containers}" = true ]; then
+                        echo "------------------------------------------------------------------------------------------------------------------------"
                         (cd "${site_dir}" && "${compose_command}" ps --all)
                     fi
                 fi
-                echo "------------------------------------------------------------------------------------------------------------------------"
+                echo "========================================================================================================================"
                 echo
             fi
         done
@@ -115,8 +161,29 @@ to remove this test site.
 }
 
 deploy() {
+    if [ "${show_help}" = true ]; then
+        cat <<EOF
+Deploy a test site.
+
+Usage: ${script_name} deploy <repo> <branch> [--install]
+
+Arguments:
+  <repo>:       The URL of a git repository
+  <branch>:     The branch
+
+Options:
+  --install:    Force installation of the test site even if it already exists
+
+Example:
+
+  ${script_name} deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+
+EOF
+        return
+    fi
+
     if [[ $# -lt 2 ]]; then
-        action_usage "deploy <repo> <branch> [--install]"
+        command_usage "deploy <repo> <branch> [--install]"
     fi
 
     repo_url="$1"
@@ -199,8 +266,34 @@ EOF
 }
 
 remove() {
+        if [ "${show_help}" = true ]; then
+        cat <<EOF
+Remove a test site.
+
+Usage: ${script_name} remove <directory>
+
+Arguments:
+  <directory>:  The test site directory
+
+Options:
+  --yes:        Don't ask for confirmation before deleting test site.
+
+Hint: Run
+
+  ${script_name} list --verbose
+
+to see the command needed to remove a test site.
+
+Example:
+
+  ${script_name} remove /home/deploy/itkdev/test-sites/rimi-itk-experiment-test-site--drupal-II --yes
+
+EOF
+        return
+    fi
+
     if [[ $# -lt 1 ]]; then
-        action_usage "remove <directory>"
+        command_usage "remove <path>"
     fi
 
     directory="$1"
@@ -234,11 +327,14 @@ fi
 command_arguments=()
 for arg in "$@"; do
     case "${arg}" in
-        --verbose)
-            is_verbose=true
-            ;;
         --debug)
             is_debugging=true
+            ;;
+        --help)
+            show_help=true
+            ;;
+        --verbose)
+            is_verbose=true
             ;;
         --yes)
             is_affirmative=true
@@ -253,17 +349,23 @@ done
 if [[ "${#command_arguments[@]}" -eq 0 ]]; then
     usage
 else
+    # https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
     set -- "${command_arguments[@]}"
 fi
 
-action="$1"
+command="$1"
 shift
 
-case "${action}" in
+case "${command}" in
     list | deploy | remove | config)
-        "${action}" "$@"
+        if [ "${is_debugging}" = true ]; then
+            # https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
+            # PS4=""
+            set -x
+        fi
+        "${command}" "$@"
         ;;
     *)
-      usage "Invalid action: ${action}"
+      usage "Invalid command: ${command}"
     ;;
 esac

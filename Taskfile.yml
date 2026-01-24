@@ -14,6 +14,7 @@ tasks:
     cmds:
       - task: coding-standards:markdown:check
       - task: coding-standards:yaml:check
+      - task: coding-standards:shell-script:check
 
   coding-standards:markdown:apply:
     desc: "Apply coding standards for Markdown"

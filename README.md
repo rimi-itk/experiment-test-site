@@ -31,10 +31,15 @@ on the `itkdev-test-site-deploy` command.
    ``` shell
    site_base_domain=test.example.com
    ```
+
+> [!NOTE]
+> A [Wildcard DNS record](https://en.wikipedia.org/wiki/Wildcard_DNS_record) should be set up for all sub-domains of the
+> value of `site_base_domain`, e.g. `*.test.example.com`.
+
 Run
 
 ``` shell
-itkdev-test-site-deploy config list
+itkdev-test-site-deploy config
 ```
 
 to see the full configuration of `itkdev-test-site-deploy`'.
@@ -99,7 +104,7 @@ say, `itkdev-test-site-deploy` does the following:
 When running
 
 ``` shell
-itkdev-test-site-deploy remove /Users/example/itkdev/test-sites/rimi-itk-experiment-test-site--feature-drupal-admin-theme
+itkdev-test-site-deploy remove /home/deploy/itkdev/test-sites/rimi-itk-experiment-test-site--feature-drupal-admin-theme
 ```
 
 say, `itkdev-test-site-deploy` does the following:
