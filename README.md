@@ -23,12 +23,20 @@ on the `itkdev-test-site-deploy` command.
    git clone https://github.com/rimi-itk/experiment-test-site
    ```
 
-2. Add the `./experiment-test-site/bin/itkdev-test-site-deploy` to your `PATH` variable.
+2. Add the `./experiment-test-site/bin/itkdev-test-site-deploy` to your `PATH` variable (or
+   [symlink](https://en.wikipedia.org/wiki/Symbolic_link) it from a directory already your `PATH`).
 3. Set the test site base domain by running
 
    ``` shell
    itkdev-test-site-deploy config set site.baseDomain
    ```
+
+> [!IMPORTANT]
+> `itkdev-test-site-deploy` uses [`git config`](https://git-scm.com/book/en/v2/Customizing-Git-Git-Configuration) to
+> store it's configuration in the `$HOME` directory, but older versions of `git` will complain when doing that and
+> report an `fatal: not in a git directory` error.
+>
+> To fix this, you can upgrade your `git` installation to `version 2.47.1` or newer.
 
 Run
 
