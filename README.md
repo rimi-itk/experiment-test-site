@@ -25,26 +25,19 @@ on the `itkdev-test-site-deploy` command.
 
 2. Add the `./experiment-test-site/bin/itkdev-test-site-deploy` to your `PATH` variable (or
    [symlink](https://en.wikipedia.org/wiki/Symbolic_link) it from a directory already your `PATH`).
-3. Set the test site base domain by running
+3. Edit `$HOME/.itkdev-test-site-deploy.config` and set the variable `site_base_domain` to the base domain of your test
+   site server, e.g.
 
    ``` shell
-   itkdev-test-site-deploy config set site.baseDomain
+   site_base_domain=test.example.com
    ```
-
-> [!IMPORTANT]
-> `itkdev-test-site-deploy` uses [`git config`](https://git-scm.com/book/en/v2/Customizing-Git-Git-Configuration) to
-> store it's configuration in the `$HOME` directory, but older versions of `git` will complain when doing that and
-> report an `fatal: not in a git directory` error.
->
-> To fix this, you can upgrade your `git` installation to `version 2.47.1` or newer.
-
 Run
 
 ``` shell
 itkdev-test-site-deploy config list
 ```
 
-to see the full configuration.
+to see the full configuration of `itkdev-test-site-deploy`'.
 
 ## Usage
 
@@ -67,8 +60,8 @@ to see details on how to use `itkdev-test-site-deploy`.
 A test site, i.e. the Git repository, must contain a [Taskfile](https://taskfile.dev/) with two tasks,
 `test-site:install` and `test-site:update`, plus a [(Docker) Compose
 file](https://docs.docker.com/reference/compose-file/) called `docker-compose.server.test.yml` (or whatever the
-`compose.files` configuration value specifies). The two tasks _must_ use `itkdev-docker-compose-server` (the configuration
-value `compose.command`) to run any compose commands.
+`compose_files` configuration value specifies). The two tasks _must_ use `itkdev-docker-compose-server` (the configuration
+value `compose_command`) to run any compose commands.
 
 Furthermore, the site must not depend on services that are not defined in the compose file, i.e. no external databases
 and such stuff.
@@ -88,8 +81,8 @@ itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site 
 say, `itkdev-test-site-deploy` does the following:
 
 1. Clones the specified branch of the Git repository into a (hopefully) uniquely named directory in the site base
-   directory (the configuration value `site.baseDir`)
-2. Generates a `.env.docker.local` (the configuration value `compose.commandConfigFilename`) file in the site directory,
+   directory (the configuration value `site_base_dir`)
+2. Generates a `.env.docker.local` (the configuration value `compose_command_config_filename`) file in the site directory,
    e.g
 
    ``` shell
