@@ -9,7 +9,9 @@ abort() {
     exit 1
 }
 
-verbose=false
+is_verbose=false
+is_debugging=false
+is_affirmative=false
 
 # Global config using `git config` as storage.
 config_path="${HOME}/.itkdev-test-site-deploy.config"
@@ -90,7 +92,7 @@ usage() {
         echo >&2
     fi
     cat >&2 <<EOF
-Usage: ${script_name} [--verbose] <action> [action arguments and flags]
+Usage: ${script_name} [--verbose] [--debug] [--yes] <action> [action arguments and flags]
 
 Actions:
   config: ${script_name} config
@@ -181,22 +183,32 @@ list() {
     echo "Projects in ${site_baseDir}"
     echo
     if [ -e "${site_baseDir}" ]; then
-        for d in "${site_baseDir}"/*; do
-            if [ -d "${d}" ]; then
+        for site_dir in "${site_baseDir}"/*; do
+            if [ -d "${site_dir}" ]; then
+                site_command_config_path="${site_dir}/${compose_commandConfigFilename}"
                 echo "------------------------------------------------------------------------------------------------------------------------"
-                echo "Directory:  ${d}"
-                echo "Repository: $(git -C "${d}" remote get-url origin)"
-                echo "Branch:     $(git -C "${d}" rev-parse --abbrev-ref HEAD)"
+                echo "Directory:  ${site_dir}"
+                echo "Repository: $(git -C "${site_dir}" remote get-url origin)"
+                echo "Branch:     $(git -C "${site_dir}" rev-parse --abbrev-ref HEAD)"
                 echo
-                echo "itkdev-docker-compose-server config:"
-                echo
-                if [ ! -e "${d}/${compose_commandConfigFilename}" ]; then
-                    warning "Compose command config file ${d}/${compose_commandConfigFilename} is missing"
+                if [ ! -e "${site_command_config_path}" ]; then
+                    warning "Compose command config file ${site_command_config_path} is missing"
                 else
-                    cat "${d}/${compose_commandConfigFilename}"
-                    echo
-                    if [ "${verbose}" = true ]; then
-                        (cd "${d}" && "${compose_command}" ps --all)
+                    if [ "${is_verbose}" = true ]; then
+                        echo "Run
+
+  ${script_name} remove ${site_dir}
+
+remove this test site.
+"
+                    fi
+                    if [ "${is_debugging}" = true ]; then
+                        echo "${site_command_config_path}:"
+                        echo
+                        cat "${site_command_config_path}"
+                        echo
+
+                        (cd "${site_dir}" && "${compose_command}" ps --all)
                     fi
                 fi
                 echo "------------------------------------------------------------------------------------------------------------------------"
@@ -298,6 +310,14 @@ remove() {
     directory="$1"
     shift
 
+    if [ "${is_affirmative}" != true ]; then
+        read -p "Really remove test site in ${directory} ([yN])? " -n 1 -r
+        echo
+        if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+            return
+        fi
+    fi
+
     if [ ! -e "${directory}/${compose_commandConfigFilename}" ]; then
         abort "Directory ${directory} does not look like a test site directory."
     fi
@@ -314,17 +334,30 @@ if [[ $# -lt 1 ]]; then
     usage
 fi
 
-while [[ "${1:-}" == --* ]]; do
-    case "${1}" in
+# Handle global flags
+command_arguments=()
+for arg in "$@"; do
+    case "${arg}" in
         --verbose)
-            verbose=true
+            is_verbose=true
+            ;;
+        --debug)
+            is_debugging=true
+            ;;
+        --yes)
+            is_affirmative=true
+            ;;
+        *)
+            command_arguments+=("${arg}")
             ;;
     esac
-    shift
 done
 
-if [[ $# -lt 1 ]]; then
+# Reset the script arguments (cf. https://stackoverflow.com/a/4827707)
+if [[ "${#command_arguments[@]}" -eq 0 ]]; then
     usage
+else
+    set -- "${command_arguments[@]}"
 fi
 
 action="$1"
