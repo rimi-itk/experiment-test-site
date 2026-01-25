@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  install:
+    desc: Install the test site
+    cmds:
+      - task: init
+      - task: update
+
+  update:
+    desc: Update the test site
+    cmds:
+      - task: init
+
+  init:
+    desc:
+    cmds:
+      - itkdev-docker-compose-server pull
+      - itkdev-docker-compose-server up --detach --wait --remove-orphans
+    internal: true

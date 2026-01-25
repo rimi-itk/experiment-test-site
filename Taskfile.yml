@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+includes:
+  test-site: task/Taskfile.test-site.yml
+
+tasks:
+  start:
+    desc: Start the show
+    cmds:
+      - docker compose pull --ignore-buildable
+      - docker compose up --detach --remove-orphans --wait
+
+  stop:
+    desc: Stop the show
+    cmds:
+      - docker compose down --remove-orphans --volumes
+
+  default:
+    cmd: task --list
+    silent: true
