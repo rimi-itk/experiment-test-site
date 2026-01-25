@@ -18,6 +18,8 @@ show_help=false
 config_path="${HOME}/.itkdev-test-site-deploy.config"
 [ -e "${config_path}" ] || touch "${config_path}"
 
+# Read config
+# @todo https://stackoverflow.com/a/36164878
 # shellcheck disable=SC1090
 . "${config_path}"
 
@@ -27,6 +29,9 @@ config_path="${HOME}/.itkdev-test-site-deploy.config"
 : "${compose_command:="itkdev-docker-compose-server"}"
 : "${compose_command_config_filename:=".env.docker.local"}"
 : "${compose_files:="docker-compose.server.test.yml"}"
+
+# Remove any trailing slash
+site_base_dir="${site_base_dir#%%/}"
 
 # Validate config
 if [[ -z "${site_base_domain}" ]]; then
@@ -117,66 +122,62 @@ EOF
         esac
     done
 
-    echo "Projects in ${site_base_dir}"
-    echo
+    number_of_sites=0
     if [ -e "${site_base_dir}" ]; then
-        for site_dir in "${site_base_dir}"/*; do
-            if [ -d "${site_dir}" ]; then
-                site_command_config_path="${site_dir}/${compose_command_config_filename}"
-                echo "========================================================================================================================"
-                echo "Directory:  ${site_dir}"
+        while IFS= read -r -d '' site_command_config_path; do
+            ((++number_of_sites))
+            site_dir=$(dirname "${site_command_config_path}")
+            site_id="${site_dir##"${site_base_dir}/"}"
+            echo "========================================================================================================================"
+            echo "ID:         ${site_id}"
 
-                created_at=""
-                domain=""
-                if [ ! -e "${site_command_config_path}" ]; then
-                    warning "Compose command config file ${site_command_config_path} is missing"
-                else
-                    domain=$(grep COMPOSE_SERVER_DOMAIN "${site_command_config_path}")
+            created_at=""
+            domain=""
+            domain=$(grep COMPOSE_SERVER_DOMAIN "${site_command_config_path}")
+            # https://tldp.org/LDP/abs/html/string-manipulation.html
+            domain="${domain##*=}"
+            # Note: `stat` in macOS (i.e. `/usr/bin/stat`) does not support `--format`
+            if stat --format '%w' "${site_command_config_path}" > /dev/null 2>&1; then
+                created_at=$(stat --format '%w' "${site_command_config_path}")
+            fi
 
-                    # Note: `stat` in macOS (i.e. `/usr/bin/stat`) does not support `--format`
-                    if stat --format '%w' "${site_command_config_path}" > /dev/null 2>&1; then
-                        created_at=$(stat --format '%w' "${site_command_config_path}")
-                    fi
-                fi
+            echo "Repository: $(git -C "${site_dir}" remote get-url origin)"
+            echo "Branch:     $(git -C "${site_dir}" rev-parse --abbrev-ref HEAD)"
+            if [ -n "${created_at}" ]; then
+                echo "Created at: ${created_at}"
+            fi
+            if [ -n "${domain}" ]; then
+                echo "URL:        https://${domain}"
+            fi
 
-                echo "Repository: $(git -C "${site_dir}" remote get-url origin)"
-                echo "Branch:     $(git -C "${site_dir}" rev-parse --abbrev-ref HEAD)"
-                if [ -n "${created_at}" ]; then
-                    echo "Created at: ${created_at}"
-                fi
-                if [ -n "${domain}" ]; then
-                    # https://tldp.org/LDP/abs/html/string-manipulation.html
-                    echo "URL:        https://${domain##*=}"
-                fi
-                if [ ! -e "${site_command_config_path}" ]; then
-                    warning "Compose command config file ${site_command_config_path} is missing"
-                else
-                    if [ "${is_verbose}" = true ]; then
-                        echo "------------------------------------------------------------------------------------------------------------------------"
-                        cat <<EOF
+            if [ "${is_verbose}" = true ]; then
+                echo "------------------------------------------------------------------------------------------------------------------------"
+                cat <<EOF
+
 Run
 
-  ${script_name} remove ${site_dir}
+  ${script_name} remove ${site_id}
 
 to remove this test site.
 EOF
-                    fi
-                    if [ "${show_compose_config}" = true ]; then
-                        echo "------------------------------------------------------------------------------------------------------------------------"
-                        echo "${site_command_config_path}:"
-                        echo
-                        cat "${site_command_config_path}"
-                        echo
-                    fi
-                    if [ "${show_compose_containers}" = true ]; then
-                        echo "------------------------------------------------------------------------------------------------------------------------"
-                        (cd "${site_dir}" && "${compose_command}" ps --all)
-                    fi
-                fi
-                echo "========================================================================================================================"
+            fi
+            if [ "${show_compose_config}" = true ]; then
+                echo "------------------------------------------------------------------------------------------------------------------------"
+                echo "${site_command_config_path}:"
+                echo
+                cat "${site_command_config_path}"
                 echo
             fi
-        done
+            if [ "${show_compose_containers}" = true ]; then
+                echo "------------------------------------------------------------------------------------------------------------------------"
+                (cd "${site_dir}" && "${compose_command}" ps --all)
+            fi
+            echo "========================================================================================================================"
+            echo
+        done < <(find "${site_base_dir}" -type f -name "${compose_command_config_filename}" -print0)
+    fi
+    if [ "${number_of_sites}" -eq 0 ]; then
+        info "No test sites deployed."
     fi
 }
 
@@ -213,15 +214,15 @@ EOF
 
     # https://tldp.org/LDP/abs/html/string-manipulation.html
     repo="${repo_url#https://github.com/}"
-    project_id=$(echo "${repo}__${branch}" | sed "s@[^a-z0-9-]@-@gi")
-    compose_project_name="${project_id}"
+    site_id=$(echo "${repo}__${branch}" | sed "s@[^a-z0-9-]@-@gi")
+    compose_project_name="${site_id}"
 
     # Our nginx container exits in the upstream hostname gets too long (more than 63 characters?):
     #
     # 2026/01/23 23:01:07 [emerg] 1#1: host not found in upstream "rimi-itk-experiment-test-site--feature-drupal-admin-theme-phpfpm-1" in /etc/nginx/conf.d/default.conf:86
     #
     if [ ${#compose_project_name} -gt 32 ]; then
-        compose_project_name="$(echo "${compose_project_name}" | head -c 24)-$(echo "${project_id}" | sha256sum | head -c 16)"
+        compose_project_name="$(echo "${compose_project_name}" | head -c 24)-$(echo "${site_id}" | sha256sum | head -c 16)"
     fi
 
     # A valid compose project name must consist only of lowercase alphanumeric
@@ -229,9 +230,9 @@ EOF
     # number.
     compose_project_name=$(echo "${compose_project_name}" | tr "[:upper:]" "[:lower:]")
 
-    project_domain="${project_id}.${site_base_domain}"
+    project_domain="${site_id}.${site_base_domain}"
     project_url="https://${project_domain}"
-    project_dir=$(echo "${site_base_dir}/${project_id}" | sed "s@[^a-z0-9/-]@@gi")
+    project_dir=$(echo "${site_base_dir}/${site_id}" | sed "s@[^a-z0-9/-]@@gi")
 
     # https://stackoverflow.com/questions/2953646/how-can-i-declare-and-use-boolean-variables-in-a-shell-script/21210966
     install_site=false
@@ -249,8 +250,6 @@ EOF
     fi
 
     info "Deploying ${repo}/${branch}"
-    info ""
-    info "Directory: ${project_dir}"
     info ""
 
     # Check out the code
@@ -290,51 +289,48 @@ remove() {
         cat <<EOF
 Remove a test site.
 
-Usage: ${script_name} remove <directory>
+Usage: ${script_name} remove <ID>
 
 Arguments:
-  <directory>:  The test site directory
+  <ID>:  The test site ID (cf. \`${script_name} list\`)
 
 Options:
   --yes:        Don't ask for confirmation before deleting test site.
 
-Hint: Run
-
-  ${script_name} list --verbose
-
-to see the command needed to remove a test site.
-
 Example:
 
-  ${script_name} remove /home/deploy/itkdev/test-sites/rimi-itk-experiment-test-site--drupal-II --yes
+  ${script_name} remove rimi-itk-experiment-test-site--drupal-II --yes
 
 EOF
         return
     fi
 
     if [[ $# -lt 1 ]]; then
-        command_usage "remove <path>"
+        command_usage "remove <id>"
     fi
 
-    directory="$1"
+    site_id="$1"
     shift
 
+
     if [ "${is_affirmative}" != true ]; then
-        read -p "Really remove test site in ${directory} ([yN])? " -n 1 -r
+        read -p "Really remove test site ${site_id} ([yN])? " -n 1 -r
         echo
         if ! [[ $REPLY =~ ^[Yy]$ ]]; then
             return
         fi
     fi
 
-    if [ ! -e "${directory}/${compose_command_config_filename}" ]; then
-        abort "Directory ${directory} does not look like a test site directory."
+    site_dir="${site_base_dir}/${site_id}"
+    if [ ! -e "${site_dir}/${compose_command_config_filename}" ]; then
+        abort "Site_Id ${site_id} does not look like a test site site_id."
     fi
 
-    (cd "${directory}" && "${compose_command}" down --remove-orphans --volumes)
-    rm -fr "${directory}"
+    (cd "${site_dir}" && "${compose_command}" down --remove-orphans --volumes)
+    rm -fr "${site_dir}"
 
-    info "Test site in ${directory} removed"
+    info
+    info "Test site ${site_id} removed"
 }
 
 # -----------------------------------------------------------------------------------------------------------------------
