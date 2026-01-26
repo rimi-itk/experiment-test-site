@@ -213,7 +213,15 @@ EOF
     shift
 
     # https://tldp.org/LDP/abs/html/string-manipulation.html
+    # @todo Handle other sources than GitHub
     repo="${repo_url#https://github.com/}"
+
+    # Handle local repositories
+    if realpath "${repo_url}" > /dev/null 2>&1; then
+        repo_url=$(realpath "${repo_url}")
+        repo=$(basename "${repo_url}")
+    fi
+
     site_id=$(echo "${repo}__${branch}" | sed "s@[^a-z0-9-]@-@gi")
     compose_project_name="${site_id}"
 
@@ -228,6 +236,7 @@ EOF
     # A valid compose project name must consist only of lowercase alphanumeric
     # characters, hyphens, and underscores as well as start with a letter or
     # number.
+    # @todo Validate the compose project name.
     compose_project_name=$(echo "${compose_project_name}" | tr "[:upper:]" "[:lower:]")
 
     project_domain="${site_id}.${site_base_domain}"
@@ -249,7 +258,7 @@ EOF
         done
     fi
 
-    info "Deploying ${repo}/${branch}"
+    info "Deploying ${site_id}"
     info ""
 
     # Check out the code

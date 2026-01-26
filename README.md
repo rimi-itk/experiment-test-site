@@ -17,7 +17,7 @@ on the `itkdev-test-site-deploy` command.
 
 ## Installation
 
-0. [Install Task](https://taskfile.dev/docs/installation) is not already installed
+0. [Install Task](https://taskfile.dev/docs/installation) if not already installed
 1. Get the code:
 
    ``` shell
@@ -118,3 +118,44 @@ say, `itkdev-test-site-deploy` does the following:
 
    in the site directory
 2. Deletes the site directory
+
+## Example test sites
+
+* <https://github.com/rimi-itk/experiment-test-site/tree/test-site/html>
+
+  ``` shell
+  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site test-site/html
+  ```
+
+* <https://github.com/rimi-itk/experiment-test-site/tree/drupal>
+
+  ``` shell
+  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site drupal
+  ```
+
+* <https://github.com/rimi-itk/experiment-test-site/tree/drupal-II>
+
+  ``` shell
+  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site drupal-II
+  ```
+
+* <https://github.com/rimi-itk/experiment-test-site/tree/feature/drupal-admin-theme>
+
+  ``` shell
+  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+  ```
+
+## Development
+
+During development (of `itkdev-test-site-deploy` or a test site), you can deploy a branch from a local repository by
+using a file path as repository URL, e.g.
+
+``` shell
+itkdev-test-site-deploy deploy . test-site/html
+```
+
+Deploy the current branch by running
+
+``` shell
+itkdev-test-site-deploy deploy . $(git rev-parse --abbrev-ref HEAD)
+```
