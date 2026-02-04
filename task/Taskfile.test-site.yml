@@ -32,7 +32,8 @@ tasks:
     desc: Install the test site
     cmds:
       - task: init
-      - itkdev-docker-compose-server exec phpfpm vendor/bin/drush site:install --existing-config --yes
+      # https://www.drush.org/13.x/commands/site_install/
+      - itkdev-docker-compose-server exec phpfpm vendor/bin/drush site:install --existing-config --extra='--skip-ssl' --yes
       - task: update
 
   update:
