@@ -61,6 +61,19 @@ itkdev-test-site-deploy
 
 to see details on how to use `itkdev-test-site-deploy`.
 
+> [!TIP]
+> If you have only a single test site server, you can create an alias (in `~/.zshrc` or `~/.bashrc` depending on your
+> shell) to easily run `itkdev-test-site-deploy` on that server:
+>
+> ``` shell
+> alias itkdev-test-site-deploy='ssh -t «server name» bash --login itkdev-test-site-deploy'
+> ```
+>
+> (replace `«server name»` with your actual server name).
+>
+> This works only if the location of `itkdev-test-site-deploy` (and `itkdev-docker-compose-server` too) is added to the
+> `PATH` variable on the server, cf. [Installation](#installation).
+
 ## Requirements and assumptions
 
 A test site, i.e. the Git repository, must contain a [Taskfile](https://taskfile.dev/) with two tasks,
