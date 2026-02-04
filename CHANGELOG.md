@@ -7,4 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* [PR-8](https://github.com/rimi-itk/experiment-test-site/pull/8)
+  Deployment by ID
+
 [Unreleased]: https://github.com/rimi-itk/experiment-test-site

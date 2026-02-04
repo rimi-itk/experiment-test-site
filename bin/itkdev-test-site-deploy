@@ -65,7 +65,10 @@ EOF
 }
 
 command_usage() {
-    echo "Usage: ${script_name}" "$@" >&2
+    echo "Usage:"
+    for arg in "${@}"; do
+        echo "${script_name}" "${arg}" >&2
+    done
     echo >&2
     exit 1
 }
@@ -97,7 +100,7 @@ List installed test sites.
 Usage: ${script_name} list [--verbose] [--show-compose-config] [--show-compose-containers]
 
 Options:
-  --verbose:                    Show additional info on each test site, e.g. the command needed to remove it
+  --verbose:                    Show additional info on each test site, e.g. the command to re-deploy or remove it
   --show-compose-config:        Show compose config
   --show-compose-containers:    Show all containers in the test site
 
@@ -154,11 +157,14 @@ EOF
                 echo "------------------------------------------------------------------------------------------------------------------------"
                 cat <<EOF
 
-Run
+Re-deploy site by running
+
+  ${script_name} deploy ${site_id}
+
+Remove it by running
 
   ${script_name} remove ${site_id}
 
-to remove this test site.
 EOF
             fi
             if [ "${show_compose_config}" = true ]; then
@@ -187,10 +193,12 @@ deploy() {
 Deploy a test site.
 
 Usage: ${script_name} deploy <repo> <branch> [--install]
+       ${script_name} deploy <ID> [--install]
 
 Arguments:
   <repo>:       The URL of a git repository
   <branch>:     The branch
+  <ID>:         ID of a previously deployed test site (cf. \`${script_name} list\`)
 
 Options:
   --install:    Force installation of the test site even if it already exists
@@ -203,14 +211,48 @@ EOF
         return
     fi
 
-    if [[ $# -lt 2 ]]; then
-        command_usage "deploy <repo> <branch> [--install]"
+    arguments=()
+    # https://stackoverflow.com/questions/2953646/how-can-i-declare-and-use-boolean-variables-in-a-shell-script/21210966
+    install_site=false
+
+    for arg in "$@"; do
+        case "${arg}" in
+            --install)
+                install_site=true
+                ;;
+            --*)
+                abort "The \"${arg}\" option does not exist."
+                ;;
+            *)
+                arguments+=("${arg}")
+                ;;
+        esac
+    done
+
+    # Reset the function arguments (cf. https://stackoverflow.com/a/4827707)
+    # https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
+    set -- "${arguments[@]}"
+
+    if [[ $# -lt 1 ]]; then
+        command_usage "deploy <repo> <branch> [--install]" \
+            "deploy <ID> [--install]"
     fi
 
-    repo_url="$1"
-    shift
-    branch="$1"
-    shift
+    if [[ $# -eq 1 ]]; then
+        site_id="$1"
+        site_dir="${site_base_dir}/${site_id}"
+        if [ ! -e "${site_dir}" ]; then
+            abort "\"${site_id}\" is not a valid site ID"
+        fi
+
+        repo_url=$(git -C "${site_dir}" remote get-url origin)
+        branch=$(git -C "${site_dir}" rev-parse --abbrev-ref HEAD)
+    else
+        repo_url="$1"
+        shift
+        branch="$1"
+        shift
+    fi
 
     # https://tldp.org/LDP/abs/html/string-manipulation.html
     # @todo Handle other sources than GitHub
@@ -243,19 +285,8 @@ EOF
     project_url="https://${project_domain}"
     project_dir=$(echo "${site_base_dir}/${site_id}" | sed "s@[^a-z0-9/-]@@gi")
 
-    # https://stackoverflow.com/questions/2953646/how-can-i-declare-and-use-boolean-variables-in-a-shell-script/21210966
-    install_site=false
-
     if [ ! -e "${project_dir}" ]; then
         install_site=true
-    else
-        for var in "$@"; do
-            case "${var}" in
-                --install)
-                    install_site=true
-                ;;
-            esac
-        done
     fi
 
     info "Deploying ${site_id}"
