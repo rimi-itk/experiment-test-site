@@ -1,0 +1,80 @@
+name: itkdev-test-site-deploy
+help: Deploy test site
+version: 0.1.0
+
+environment_variables:
+  - name: ITKDEV_TEST_SITE_DEPLOY_CONFIG_FILE
+    help: Location of the config file
+    default: $HOME/.itkdev-test-site-deploy.ini
+
+commands:
+  - name: list
+    help: |-
+      List installed test sites.
+
+    flags:
+      - long: --verbose
+        help: Show more information
+      - long: --show-compose-config
+        help: Show compose config
+      - long: --show-compose-containers
+        help: Show all containers in the test site
+
+    examples:
+      - itkdev-test-site-deploy list
+      - itkdev-test-site-deploy list --verbose
+
+  - name: deploy
+    help: Deploy a test site
+
+    args:
+      - name: repository
+        required: true
+        help: The Git repository URL
+
+      - name: branch
+        required: false
+        help: The repository branch
+
+    flags:
+      - long: --install
+        help: Install even when test site already exists
+
+    examples:
+      - itkdev-test-site-deploy deploy . .
+      - itkdev-test-site-deploy deploy my-test-site --install
+
+  - name: config
+    help: Config
+
+    commands:
+      - name: show
+        help: Show config values
+        default: true
+
+      - name: set
+        help: Set config value
+        args:
+          - name: name
+            required: true
+            help: The config key
+            allowed:
+              - compose_command
+              - compose_command_config_filename
+              - compose_files
+              - site_base_dir
+              - site_base_domain
+          - name: value
+            required: true
+            help: The config value
+
+  # https://bashly.dev/advanced/bash-completion/
+  - name: completions
+    help: |-
+      Generate bash completions.
+
+      Add
+
+      eval $(itkdev-test-site-deploy completions)
+
+      to your ~/.bashrc or similar.

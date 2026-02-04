@@ -3,6 +3,17 @@
 version: "3"
 
 tasks:
+  build:
+    desc: Build for production
+    cmds:
+      - task: bashly
+        vars:
+          TASK_ARGS: generate --upgrade --env production
+
+  bashly:
+    internal: true
+    cmd: bashly {{.TASK_ARGS}} {{.CLI_ARGS}}
+
   coding-standards:apply:
     desc: "Apply coding standards"
     cmds:
@@ -37,7 +48,7 @@ tasks:
     vars:
       # We use a block scalar (https://yaml-multiline.info/#block-scalars) here to make escaping (a little) easier.
       GLOB: >-
-        {{.CLI_ARGS | default "bin/*"}}
+        {{.CLI_ARGS | default "src/*.sh" "src/lib/custom/*.sh"}}
 
   coding-standards:yaml:apply:
     desc: "Apply coding standards for YAML"
