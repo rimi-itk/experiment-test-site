@@ -66,7 +66,7 @@ EOF
 
 command_usage() {
     echo "Usage:"
-    for arg in "${@}"; do
+    for arg in "$@"; do
         echo "${script_name}" "${arg}" >&2
     done
     echo >&2
@@ -112,8 +112,11 @@ EOF
         return
     fi
 
+    arguments=()
+    # https://stackoverflow.com/questions/2953646/how-can-i-declare-and-use-boolean-variables-in-a-shell-script/21210966
     show_compose_config=false
     show_compose_containers=false
+
     for arg in "$@"; do
         case "${arg}" in
             --show-compose-config)
@@ -122,8 +125,18 @@ EOF
             --show-compose-containers)
                 show_compose_containers=true
                 ;;
+            --*)
+                abort "The \"${arg}\" option does not exist."
+                ;;
+            *)
+                arguments+=("${arg}")
+                ;;
         esac
     done
+
+    # Reset the function arguments (cf. https://stackoverflow.com/a/4827707)
+    # https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
+    set -- "${arguments[@]}"
 
     number_of_sites=0
     if [ -e "${site_base_dir}" ]; then
