@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 
-inspect_args
+# inspect_args
 
 # shellcheck disable=SC2154
 show_compose_config="${args[--show-compose-config]}"

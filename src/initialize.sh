@@ -3,6 +3,8 @@
 
 enable_auto_colors
 
+script_name=$(basename "${BASH_SOURCE[0]}")
+
 # shellcheck disable=SC2034  # https://github.com/bashly-framework/bashly/blob/master/examples/config/src/lib/config.sh
 CONFIG_FILE="$ITKDEV_TEST_SITE_DEPLOY_CONFIG_FILE"
 

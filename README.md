@@ -1,4 +1,4 @@
-# itkdev-test-site-deploy
+# itkdev-test-site
 
 A pragmatic solution to easily deploy test sites utilizing `itkdev-docker-compose-server`[^1].
 
@@ -9,11 +9,11 @@ A pragmatic solution to easily deploy test sites utilizing `itkdev-docker-compos
 A test site is deployed by specifying a Git repository URL and a branch name, e.g.
 
 ``` shell
-itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
 ```
 
 and then, if everything goes according to plan, a fresh test site is avaliable. See [Usage](#usage) for further details
-on the `itkdev-test-site-deploy` command.
+on the `itkdev-test-site` command.
 
 ## Installation
 
@@ -24,14 +24,15 @@ on the `itkdev-test-site-deploy` command.
    git clone https://github.com/rimi-itk/experiment-test-site
    ```
 
-2. Add the `./experiment-test-site/bin/itkdev-test-site-deploy` to your `PATH` variable (or
+2. Add the `./experiment-test-site/bin/itkdev-test-site` to your `PATH` variable (or
    [symlink](https://en.wikipedia.org/wiki/Symbolic_link) it from a directory already your `PATH`).
-3. Edit `$HOME/.itkdev-test-site-deploy.config` and set the variable `site_base_domain` to the base domain of your test
-   site server, e.g.
+3. Set the test site base domain by running
 
    ``` shell
-   site_base_domain=test.example.com
+   itkdev-test-site config set site_base_domain «domain»
    ```
+
+   (replace `«domain»` with a real domain, e.g. `test.example.com`)
 
 > [!NOTE]
 > A [Wildcard DNS record](https://en.wikipedia.org/wiki/Wildcard_DNS_record) should be set up for all sub-domains of the
@@ -40,26 +41,26 @@ on the `itkdev-test-site-deploy` command.
 Run
 
 ``` shell
-itkdev-test-site-deploy config
+itkdev-test-site config show
 ```
 
-to see the full configuration of `itkdev-test-site-deploy`'.
+to see the full configuration of `itkdev-test-site`'.
 
 ## Usage
 
 Deploy a test site with
 
 ``` shell
-itkdev-test-site-deploy deploy «repository URL» «branch»
+itkdev-test-site deploy «repository URL» «branch»
 ```
 
 Run
 
 ``` shell
-itkdev-test-site-deploy
+itkdev-test-site
 ```
 
-to see details on how to use `itkdev-test-site-deploy`.
+to see details on how to use `itkdev-test-site`.
 
 ## Requirements and assumptions
 
@@ -81,10 +82,10 @@ See <https://github.com/rimi-itk/experiment-test-site/tree/feature/drupal-admin-
 When running
 
 ``` shell
-itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
 ```
 
-say, `itkdev-test-site-deploy` does the following:
+say, `itkdev-test-site` does the following:
 
 1. Clones the specified branch of the Git repository into a (hopefully) uniquely named directory in the site base
    directory (the configuration value `site_base_dir`)
@@ -105,10 +106,10 @@ say, `itkdev-test-site-deploy` does the following:
 When running
 
 ``` shell
-itkdev-test-site-deploy remove /home/deploy/itkdev/test-sites/rimi-itk-experiment-test-site--feature-drupal-admin-theme
+itkdev-test-site remove /home/deploy/itkdev/test-sites/rimi-itk-experiment-test-site--feature-drupal-admin-theme
 ```
 
-say, `itkdev-test-site-deploy` does the following:
+say, `itkdev-test-site` does the following:
 
 1. Runs
 
@@ -124,38 +125,38 @@ say, `itkdev-test-site-deploy` does the following:
 * <https://github.com/rimi-itk/experiment-test-site/tree/test-site/html>
 
   ``` shell
-  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site test-site/html
+  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site test-site/html
   ```
 
 * <https://github.com/rimi-itk/experiment-test-site/tree/drupal>
 
   ``` shell
-  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site drupal
+  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site drupal
   ```
 
 * <https://github.com/rimi-itk/experiment-test-site/tree/drupal-II>
 
   ``` shell
-  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site drupal-II
+  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site drupal-II
   ```
 
 * <https://github.com/rimi-itk/experiment-test-site/tree/feature/drupal-admin-theme>
 
   ``` shell
-  itkdev-test-site-deploy deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
   ```
 
 ## Development
 
-During development (of `itkdev-test-site-deploy` or a test site), you can deploy a branch from a local repository by
+During development (of `itkdev-test-site` or a test site), you can deploy a branch from a local repository by
 using a file path as repository URL, e.g.
 
 ``` shell
-itkdev-test-site-deploy deploy . test-site/html
+itkdev-test-site deploy . test-site/html
 ```
 
 Deploy the current branch by running
 
 ``` shell
-itkdev-test-site-deploy deploy . $(git rev-parse --abbrev-ref HEAD)
+itkdev-test-site deploy . $(git rev-parse --abbrev-ref HEAD)
 ```

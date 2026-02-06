@@ -1,4 +1,4 @@
 *.local
 src/lib/*
 !src/lib/custom
-itkdev-test-site-deploy
+itkdev-test-site

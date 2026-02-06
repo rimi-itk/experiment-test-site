@@ -1,11 +1,19 @@
-name: itkdev-test-site-deploy
-help: Deploy test site
+name: itkdev-test-site
+help: Test site management
 version: 0.1.0
 
 environment_variables:
-  - name: ITKDEV_TEST_SITE_DEPLOY_CONFIG_FILE
+  - name: ITKDEV_TEST_SITE_CONFIG_FILE
     help: Location of the config file
-    default: $HOME/.itkdev-test-site-deploy.ini
+    default: $HOME/.itkdev-test-site.ini
+
+dependencies:
+  task: visit https://taskfile.dev/docs/installation for more information
+  git: visit https://git-scm.com/install/ for more information
+
+flags:
+  - long: --debug
+    help: Show debugging information
 
 commands:
   - name: list
@@ -21,11 +29,11 @@ commands:
         help: Show all containers in the test site
 
     examples:
-      - itkdev-test-site-deploy list
-      - itkdev-test-site-deploy list --verbose
+      - itkdev-test-site list
+      - itkdev-test-site list --verbose
 
-  - name: deploy
-    help: Deploy a test site
+  - name: install
+    help: Install a test site.
 
     args:
       - name: repository
@@ -41,11 +49,28 @@ commands:
         help: Install even when test site already exists
 
     examples:
-      - itkdev-test-site-deploy deploy . .
-      - itkdev-test-site-deploy deploy my-test-site --install
+      - itkdev-test-site install https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+      - |
+        # Install from local repository
+        itkdev-test-site install . feature/drupal-admin-theme
+
+  - name: update
+    help: Update a test site.
+
+    args:
+      - name: ID
+        required: true
+        help: The test site ID (cf. list)
+
+    flags:
+      - long: --install
+        help: Install test site rather than updating it
+
+    examples:
+      - itkdev-test-site update my-test-site
 
   - name: config
-    help: Config
+    help: Manage test site config.
 
     commands:
       - name: show
@@ -70,11 +95,12 @@ commands:
 
   # https://bashly.dev/advanced/bash-completion/
   - name: completions
+    private: true
     help: |-
       Generate bash completions.
 
       Add
 
-      eval $(itkdev-test-site-deploy completions)
+      eval $(itkdev-test-site completions)
 
       to your ~/.bashrc or similar.
