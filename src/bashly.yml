@@ -12,6 +12,8 @@ dependencies:
   git: visit https://git-scm.com/install/ for more information
 
 flags:
+  - long: --verbose
+    help: Show commands run
   - long: --debug
     help: Show debugging information
 
@@ -22,7 +24,7 @@ commands:
 
     flags:
       - long: --verbose
-        help: Show more information
+        help: Show additional info on each test site, e.g. the command to update and delete it
       - long: --show-compose-config
         help: Show compose config
       - long: --show-compose-containers
@@ -58,16 +60,45 @@ commands:
     help: Update a test site.
 
     args:
-      - name: ID
+      - name: site-id
         required: true
-        help: The test site ID (cf. list)
+        help: The test site ID (cf. `itkdev-test-site list`)
 
     flags:
       - long: --install
-        help: Install test site rather than updating it
+        help: Install test site rather than updating it, i.e. force a reinstall.
 
     examples:
       - itkdev-test-site update my-test-site
+      - itkdev-test-site update my-test-site --install
+
+  - name: delete
+    help: Delete a test site.
+
+    args:
+      - name: site-id
+        required: true
+        help: The test site ID (cf. `itkdev-test-site list`)
+    flags:
+      - long: --yes
+        help: Do not ask for confirmation before deleting test site.
+
+    examples:
+      - itkdev-test-site delete my-test-site
+
+  - name: purge
+    help: Purge test sites.
+
+    flags:
+      - long: --created-before
+        arg: date
+        help: Purge test sites created before this date.
+      - long: --dry-run
+        help: Don't actually do anything, but show what will be done.
+
+    examples:
+      - itkdev-test-site purge --created-before "2 weeks ago" --dry-run
+      - itkdev-test-site purge --dry-run
 
   - name: config
     help: Manage test site config.
@@ -92,6 +123,20 @@ commands:
           - name: value
             required: true
             help: The config value
+
+      - name: unset
+        help: Unset config value
+        args:
+          - name: name
+            required: true
+            help: The config key
+            allowed:
+              - compose_command
+              - compose_command_config_filename
+              - compose_files
+              - site_base_dir
+              # site_base_domain must not be unset
+              # - site_base_domain
 
   # https://bashly.dev/advanced/bash-completion/
   - name: completions

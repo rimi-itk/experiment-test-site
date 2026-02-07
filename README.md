@@ -9,7 +9,7 @@ A pragmatic solution to easily deploy test sites utilizing `itkdev-docker-compos
 A test site is deployed by specifying a Git repository URL and a branch name, e.g.
 
 ``` shell
-itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+itkdev-test-site install https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
 ```
 
 and then, if everything goes according to plan, a fresh test site is avaliable. See [Usage](#usage) for further details
@@ -48,10 +48,10 @@ to see the full configuration of `itkdev-test-site`'.
 
 ## Usage
 
-Deploy a test site with
+Install a test site with
 
 ``` shell
-itkdev-test-site deploy «repository URL» «branch»
+itkdev-test-site install «repository URL» «branch»
 ```
 
 Run
@@ -82,7 +82,7 @@ See <https://github.com/rimi-itk/experiment-test-site/tree/feature/drupal-admin-
 When running
 
 ``` shell
-itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+itkdev-test-site install https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
 ```
 
 say, `itkdev-test-site` does the following:
@@ -125,25 +125,25 @@ say, `itkdev-test-site` does the following:
 * <https://github.com/rimi-itk/experiment-test-site/tree/test-site/html>
 
   ``` shell
-  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site test-site/html
+  itkdev-test-site install https://github.com/rimi-itk/experiment-test-site test-site/html
   ```
 
 * <https://github.com/rimi-itk/experiment-test-site/tree/drupal>
 
   ``` shell
-  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site drupal
+  itkdev-test-site install https://github.com/rimi-itk/experiment-test-site drupal
   ```
 
 * <https://github.com/rimi-itk/experiment-test-site/tree/drupal-II>
 
   ``` shell
-  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site drupal-II
+  itkdev-test-site install https://github.com/rimi-itk/experiment-test-site drupal-II
   ```
 
 * <https://github.com/rimi-itk/experiment-test-site/tree/feature/drupal-admin-theme>
 
   ``` shell
-  itkdev-test-site deploy https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+  itkdev-test-site install https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
   ```
 
 ## Development
@@ -152,11 +152,11 @@ During development (of `itkdev-test-site` or a test site), you can deploy a bran
 using a file path as repository URL, e.g.
 
 ``` shell
-itkdev-test-site deploy . test-site/html
+itkdev-test-site install . test-site/html
 ```
 
 Deploy the current branch by running
 
 ``` shell
-itkdev-test-site deploy . $(git rev-parse --abbrev-ref HEAD)
+itkdev-test-site install . $(git rev-parse --abbrev-ref HEAD)
 ```

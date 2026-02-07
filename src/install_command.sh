@@ -1,5 +1,9 @@
 # shellcheck shell=bash
 
+if [ -z "${site_base_domain}" ]; then
+    abort "Site base domain is not set"
+fi
+
 repo_url="${args[repository]}"
 branch="${args[branch]}"
 
@@ -64,4 +68,4 @@ print_info "" "Installing test site"
 
 run_command task test-site:install
 
-print_info "" "Test site ${site_id} installed and available on" "" "  ${project_url}" ""
+print_info "" "Test site \"${site_id}\" installed and available on" "" "  ${project_url}" ""
