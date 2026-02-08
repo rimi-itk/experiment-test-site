@@ -44,7 +44,7 @@ Run
 itkdev-test-site config show
 ```
 
-to see the full configuration of `itkdev-test-site`'.
+to see the full configuration used by `itkdev-test-site`.
 
 ## Usage
 
@@ -77,7 +77,7 @@ See <https://github.com/rimi-itk/experiment-test-site/tree/feature/drupal-admin-
 
 ## Technical details
 
-### Deployment
+### Site installation
 
 When running
 
@@ -101,12 +101,12 @@ say, `itkdev-test-site` does the following:
 
 3. Runs `task test-site:install` (or `task test-site:update` if the test site already exists) in the site directory
 
-### Removal
+### Site deletion
 
 When running
 
 ``` shell
-itkdev-test-site remove /home/deploy/itkdev/test-sites/rimi-itk-experiment-test-site--feature-drupal-admin-theme
+itkdev-test-site delete rimi-itk-experiment-test-site--feature-drupal-admin-theme
 ```
 
 say, `itkdev-test-site` does the following:
@@ -114,7 +114,7 @@ say, `itkdev-test-site` does the following:
 1. Runs
 
    ``` shell
-   itkdev-docker-compose-server down down --remove-orphans --volumes
+   itkdev-docker-compose-server down --remove-orphans --volumes
    ```
 
    in the site directory
@@ -158,5 +158,14 @@ itkdev-test-site install . test-site/html
 Deploy the current branch by running
 
 ``` shell
-itkdev-test-site install . $(git rev-parse --abbrev-ref HEAD)
+itkdev-test-site deploy . $(git rev-parse --abbrev-ref HEAD)
+```
+
+### Documentation
+
+The documentation for `itkdev-test-site` is built with [Retype](https://retype.com/). To build the documentation,
+[install Retype](https://retype.com/guides/installation/) and run
+
+``` shell
+retype start
 ```

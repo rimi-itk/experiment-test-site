@@ -10,12 +10,19 @@ tasks:
         vars:
           TASK_ARGS: generate --upgrade --env production
 
-  bashly:
-    internal: true
+  docs:build:
+    desc: Build documentation with Retype
     cmds:
-      # https://bashly.dev/installation/
-      - docker pull dannyben/bashly
-      - docker run --rm -it --user $(id -u):$(id -g) --volume "$PWD:/app" dannyben/bashly {{.TASK_ARGS}} {{.CLI_ARGS}}
+      - task: retype
+        vars:
+          TASK_ARGS: build
+
+  docs:start:
+    desc: Build and serve documentation
+    cmds:
+      - task: retype
+        vars:
+          TASK_ARGS: start
 
   coding-standards:apply:
     desc: "Apply coding standards"
@@ -69,3 +76,16 @@ tasks:
   default:
     cmd: task --list
     silent: true
+
+  bashly:
+    internal: true
+    cmds:
+      # https://bashly.dev/installation/
+      - docker pull dannyben/bashly
+      - docker run --rm -it --user $(id -u):$(id -g) --volume "$PWD:/app" dannyben/bashly {{.TASK_ARGS}} {{.CLI_ARGS}}
+
+  retype:
+    internal: true
+    cmds:
+      - docker pull retypeapp/retype
+      - docker run --rm -it --user $(id -u):$(id -g) --volume "$PWD:/retype" --publish '127.0.0.1:5001:5001' retypeapp/retype retype {{.TASK_ARGS}} {{.CLI_ARGS}}

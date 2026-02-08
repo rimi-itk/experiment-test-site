@@ -1,2 +1,4 @@
 *.local
 itkdev-test-site
+.retype
+retype.manifest
