@@ -3,6 +3,7 @@
 show_compose_config="${args[--show-compose-config]}"
 show_compose_containers="${args[--show-compose-containers]}"
 verbose="${args[--verbose]}"
+quiet="${args[--quiet]}"
 
 number_of_sites=0
 if [ -e "${site_base_dir?:}" ]; then
@@ -10,7 +11,11 @@ if [ -e "${site_base_dir?:}" ]; then
         ((++number_of_sites))
         site_dir=$(dirname "${site_command_config_path}")
         site_id="${site_dir##"${site_base_dir}/"}"
-        cd "${site_dir}"
+        if [ "${quiet}" ]; then
+            echo "${site_id}"
+            continue
+        fi
+        cd "${site_dir}" || exit
         site_created_at=$(site_get_created_at)
         site_url=$(site_get_url)
 
@@ -55,6 +60,9 @@ EOF
         echo
     done < <(find "${site_base_dir?:}" -type f -name "${compose_command_config_filename?:}" -print0)
 fi
-if [ "${number_of_sites}" -eq 0 ]; then
-    print_info "No sites installed."
+
+if [ ! "${quiet}" ]; then
+    if [ "${number_of_sites}" -eq 0 ]; then
+        print_info "No sites installed."
+    fi
 fi

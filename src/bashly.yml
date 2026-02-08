@@ -29,6 +29,8 @@ commands:
         help: Show compose config
       - long: --show-compose-containers
         help: Show all containers in the test site
+      - long: --quiet
+        help: Only display site IDs
 
     examples:
       - itkdev-test-site list
@@ -60,9 +62,14 @@ commands:
     help: Update a test site.
 
     args:
-      - name: site-id
+      - &arg_site_id
+        name: site-id
         required: true
         help: The test site ID (cf. `itkdev-test-site list`)
+        # https://bashly.dev/advanced/bash-completion/#custom-command-completions
+        # @todo This does not work
+        # allowed:
+        #   - $(itkdev-test-site list --quiet 2> /dev/null)
 
     flags:
       - long: --install
@@ -76,9 +83,8 @@ commands:
     help: Delete a test site.
 
     args:
-      - name: site-id
-        required: true
-        help: The test site ID (cf. `itkdev-test-site list`)
+      - *arg_site_id
+
     flags:
       - long: --yes
         help: Do not ask for confirmation before deleting test site.

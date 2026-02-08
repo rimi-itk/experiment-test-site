@@ -2,8 +2,7 @@ site_id="${args[site-id]?:}"
 yes="${args[--yes]:-}"
 
 if [ ! "$yes" ]; then
-    read -p "Really remove test site ${site_id} ([yN])? " -n 1 -r
-    echo
+    ask "Really delete test site ${site_id} ([yN])? "
     if ! [[ $REPLY =~ ^[Yy]$ ]]; then
         return
     fi

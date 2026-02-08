@@ -11,7 +11,7 @@ CONFIG_FILE="${ITKDEV_TEST_SITE_CONFIG_FILE?:}"
 compose_command=$(config_get "compose_command" "itkdev-docker-compose-server")
 compose_command_config_filename=$(config_get "compose_command_config_filename" ".env.docker.local")
 compose_files=$(config_get "compose_files" "docker-compose.server.test.yml")
-site_base_dir=$(config_get "site_base_dir" "${HOME}/itkdev/test-sites")
+site_base_dir=$(config_get "site_base_dir" "${HOME}/.itkdev-test-site")
 
 # Check if a base domain is set and is not currently being set.
 if [[ -z "$(config_get "site_base_domain")" ]]; then

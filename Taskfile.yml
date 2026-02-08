@@ -12,7 +12,10 @@ tasks:
 
   bashly:
     internal: true
-    cmd: bashly {{.TASK_ARGS}} {{.CLI_ARGS}}
+    cmds:
+      # https://bashly.dev/installation/
+      - docker pull dannyben/bashly
+      - docker run --rm -it --user $(id -u):$(id -g) --volume "$PWD:/app" dannyben/bashly {{.TASK_ARGS}} {{.CLI_ARGS}}
 
   coding-standards:apply:
     desc: "Apply coding standards"
