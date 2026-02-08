@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://docs.example.com/sitemap.xml.gz
+Sitemap: https://rimi-itk.github.io/experiment-test-site/sitemap.xml.gz
