@@ -1,0 +1,32 @@
+input: .
+output: .retype
+
+#url: https://rimi-itk.github.io/experiment-test-site/
+
+start:
+  # Uncomment the next line to try Retype Pro features
+  # pro: true
+
+branding:
+  title: itkdev-test-site
+  label: Docs
+
+# links:
+#   - text: Installation
+#     link: /#installation
+
+footer:
+  copyright: "&copy; Copyright {{ year }}. All rights reserved."
+
+exclude:
+  - bin/
+  - CHANGELOG.md
+
+edit:
+  repo: "https://github.com/rimi-itk/experiment-test-site/edit/"
+  branch: main
+
+links:
+  - text: GitHub
+    link: https://github.com/rimi-itk/experiment-test-site
+    icon: mark-github

@@ -1,0 +1,157 @@
+name: itkdev-test-site
+help: Test site management
+version: 0.1.0
+
+environment_variables:
+  - name: ITKDEV_TEST_SITE_CONFIG_FILE
+    help: Location of the config file
+    default: $HOME/.itkdev-test-site.ini
+
+dependencies:
+  task: visit https://taskfile.dev/docs/installation for more information
+  git: visit https://git-scm.com/install/ for more information
+
+flags:
+  - long: --verbose
+    help: Show commands run
+  - long: --debug
+    help: Show debugging information
+
+commands:
+  - name: list
+    help: |-
+      List installed test sites.
+
+    flags:
+      - long: --verbose
+        help: Show additional info on each test site, e.g. the command to update and delete it
+      - long: --show-compose-config
+        help: Show compose config
+      - long: --show-compose-containers
+        help: Show all containers in the test site
+      - long: --quiet
+        help: Only display site IDs
+
+    examples:
+      - itkdev-test-site list
+      - itkdev-test-site list --verbose
+
+  - name: install
+    help: Install a test site.
+
+    args:
+      - name: repository
+        required: true
+        help: The Git repository URL
+
+      - name: branch
+        required: false
+        help: The repository branch
+
+    flags:
+      - long: --install
+        help: Install even when test site already exists
+
+    examples:
+      - itkdev-test-site install https://github.com/rimi-itk/experiment-test-site feature/drupal-admin-theme
+      - |
+        # Install from local repository
+        itkdev-test-site install . feature/drupal-admin-theme
+
+  - name: update
+    help: Update a test site.
+
+    args:
+      - &arg_site_id
+        name: site-id
+        required: true
+        help: The test site ID (cf. `itkdev-test-site list`)
+        # https://bashly.dev/advanced/bash-completion/#custom-command-completions
+        # @todo This does not work
+        # allowed:
+        #   - $(itkdev-test-site list --quiet 2> /dev/null)
+
+    flags:
+      - long: --install
+        help: Install test site rather than updating it, i.e. force a reinstall.
+
+    examples:
+      - itkdev-test-site update my-test-site
+      - itkdev-test-site update my-test-site --install
+
+  - name: delete
+    help: Delete a test site.
+
+    args:
+      - *arg_site_id
+
+    flags:
+      - long: --yes
+        help: Do not ask for confirmation before deleting test site.
+
+    examples:
+      - itkdev-test-site delete my-test-site
+
+  - name: purge
+    help: Purge test sites.
+
+    flags:
+      - long: --created-before
+        arg: date
+        help: Purge test sites created before this date.
+      - long: --dry-run
+        help: Don't actually do anything, but show what will be done.
+
+    examples:
+      - itkdev-test-site purge --created-before "2 weeks ago" --dry-run
+      - itkdev-test-site purge --dry-run
+
+  - name: config
+    help: Manage test site config.
+
+    commands:
+      - name: show
+        help: Show config values
+        default: true
+
+      - name: set
+        help: Set config value
+        args:
+          - name: name
+            required: true
+            help: The config key
+            allowed:
+              - compose_command
+              - compose_command_config_filename
+              - compose_files
+              - site_base_dir
+              - site_base_domain
+          - name: value
+            required: true
+            help: The config value
+
+      - name: unset
+        help: Unset config value
+        args:
+          - name: name
+            required: true
+            help: The config key
+            allowed:
+              - compose_command
+              - compose_command_config_filename
+              - compose_files
+              - site_base_dir
+              # site_base_domain must not be unset
+              # - site_base_domain
+
+  # https://bashly.dev/advanced/bash-completion/
+  - name: completions
+    private: true
+    help: |-
+      Generate bash completions.
+
+      Add
+
+      eval $(itkdev-test-site completions)
+
+      to your ~/.bashrc or similar.
